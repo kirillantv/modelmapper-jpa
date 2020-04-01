@@ -53,7 +53,7 @@ public class JpaLazyAsNullCondition<S, D> implements Condition<S, D> {
 
             try {
                 Object fieldValue = field.get(source);
-                if (!unitUtil.isLoaded(fieldValue)) {
+                if (!unitUtil.isLoaded(fieldValue) || field.isAnnotationPresent(MappingIgnore.class)) {
                     fieldValue = null;
                     field.set(source, fieldValue);
                 }
@@ -66,6 +66,11 @@ public class JpaLazyAsNullCondition<S, D> implements Condition<S, D> {
 
                     if (isEntity) {
                         setNullForAllLazyLoadEntities(fieldValue, unitUtil);
+                    } else if (Iterable.class.isAssignableFrom(field.getType())) {
+                        Iterable iterableValue = (Iterable) fieldValue;
+                        iterableValue.forEach(value -> {
+                            setNullForAllLazyLoadEntities(value, unitUtil);
+                        });
                     }
                 }
             } catch (IllegalAccessException e) {
